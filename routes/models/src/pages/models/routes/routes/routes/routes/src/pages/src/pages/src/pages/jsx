@@ -1,0 +1,11 @@
+const exportarExtrato = async () => {
+  const res = await axios.get("http://localhost:8000/extrato", {
+    params: { conta_numero: conta, tipo, inicio, fim },
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const blob = new Blob([JSON.stringify(res.data, null, 2)], { type: "application/json" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "extrato.json";
+  link.click();
+};
