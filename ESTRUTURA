@@ -1,0 +1,7 @@
+banking_system.py
+├── Auditoria / LogEvento .......... Registro de eventos e auditoria
+├── Cliente / KYCService ........... Cadastro e verificação de identidade
+├── ContaBancaria .................. Conta corrente e poupança (com rendimento)
+├── CarteiraCripto ................. Gestão de tokens e histórico de transações
+├── ConversorCambio ................ Conversão fiat ↔ cripto
+└── BancoDigital ................... Orquestrador do sistema
