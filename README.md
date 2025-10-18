@@ -1,28 +1,16 @@
 # Desafio-de-Codigo-Sistema-Bancario
-Sistema bancário em Python
-Um sistema simples, completo e extensível, com:
+Este projeto é um sistema bancário completo desenvolvido em Python, com suporte a múltiplos clientes, contas (corrente e poupança), operações financeiras e persistência de dados. Ideal para fins educacionais, testes ou como base para sistemas mais robustos.
+*Funcionalidades
+Cadastro de clientes com autenticação por senha (hash SHA-256)
 
-Cadastro de clientes e contas (corrente e poupança)
+Criação de contas corrente e poupança
 
-Depósito, saque, transferência e extrato
+Depósito, saque e transferência entre contas
 
-Autenticação por senha com hash
+Extrato com histórico de transações
 
-Persistência em JSON
+Limites de saque por operação
 
-Menu CLI
+Persistência de dados em arquivo JSON
 
-Estrutura do projeto
-bank/
-
-models.py
-
-storage.py
-
-services.py
-
-cli.py
-
-main.py
-
-Você pode copiar todos os arquivos abaixo. Rode com: python main.py
+Interface de linha de comando (CLI)
