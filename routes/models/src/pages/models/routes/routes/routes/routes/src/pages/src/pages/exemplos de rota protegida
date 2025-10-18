@@ -1,0 +1,3 @@
+@router.get("/extrato")
+def consultar_extrato(cpf: str = Depends(verificar_token), db: Session = Depends(get_db)):
+    # lógica para buscar extrato do cliente autenticado
