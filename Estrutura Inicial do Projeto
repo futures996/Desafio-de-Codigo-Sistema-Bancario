@@ -1,0 +1,19 @@
+sistema_bancario/
+├── main.py
+├── models/
+│   ├── cliente.py
+│   ├── conta.py
+│   └── transacao.py
+├── services/
+│   ├── autenticacao.py
+│   ├── operacoes.py
+│   └── rendimento.py
+├── utils/
+│   ├── validacoes.py
+│   └── auditoria.py
+├── data/
+│   └── banco.json
+├── tests/
+│   └── test_operacoes.py
+├── README.md
+└── requirements.txt
