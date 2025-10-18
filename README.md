@@ -1,8 +1,21 @@
 # Desafio-de-Codigo-Sistema-Bancario
-Claro, Luan! Aqui está o modelo de um **sistema bancário completo e moderno**, com suporte a **conta corrente, poupança e criptomoedas**, pensado para operar como uma plataforma digital robusta, segura e escalável — ideal para fintechs, bancos digitais ou soluções Web3.
+Sistema Bancário Multifuncional em Python
+📌 Visão Geral
+Este projeto implementa um sistema bancário digital completo em Python, com suporte a:
 
----
+Conta Corrente: depósitos, saques, transferências.
 
+Conta Poupança: depósitos, resgates e cálculo de rendimento automático.
+
+Carteira Cripto: envio, recebimento e transferência de tokens.
+
+Conversão Fiat ↔ Cripto: compra e venda de criptomoedas com taxa de câmbio simulada.
+
+KYC & Compliance: verificação de identidade básica.
+
+Auditoria: registro de todas as operações para rastreabilidade.
+
+A arquitetura é modular e extensível, permitindo integração futura com APIs, bancos de dados e blockchains reais.
 ## 🏦 SISTEMA BANCÁRIO MULTIFUNCIONAL – VISÃO GERAL
 
 ### 🎯 Objetivo
