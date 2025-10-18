@@ -1,0 +1,353 @@
+# banking_system.py
+from __future__ import annotations
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Literal
+import uuid
+
+TipoConta = Literal["corrente", "poupanca"]
+
+
+# =========================
+# Utilidades e auditoria
+# =========================
+@dataclass
+class LogEvento:
+    id: str
+    timestamp: datetime
+    tipo: str
+    mensagem: str
+    meta: Dict[str, str] = field(default_factory=dict)
+
+
+class Auditoria:
+    def __init__(self):
+        self.eventos: List[LogEvento] = []
+
+    def registrar(self, tipo: str, mensagem: str, meta: Optional[Dict[str, str]] = None) -> None:
+        evento = LogEvento(
+            id=str(uuid.uuid4()),
+            timestamp=datetime.utcnow(),
+            tipo=tipo,
+            mensagem=mensagem,
+            meta=meta or {}
+        )
+        self.eventos.append(evento)
+
+    def consultar(self, tipo: Optional[str] = None) -> List[LogEvento]:
+        if tipo:
+            return [e for e in self.eventos if e.tipo == tipo]
+        return list(self.eventos)
+
+
+# =========================
+# KYC e identidade
+# =========================
+@dataclass
+class Cliente:
+    id: str
+    nome: str
+    documento: str
+    verificado_kyc: bool = False
+
+
+class KYCService:
+    def verificar(self, cliente: Cliente) -> bool:
+        # Regra simples: documento com 11+ caracteres é "válido"
+        valido = len(cliente.documento) >= 11
+        cliente.verificado_kyc = valido
+        return valido
+
+
+# =========================
+# Contas bancárias
+# =========================
+@dataclass
+class Transacao:
+    id: str
+    data: datetime
+    tipo: str
+    valor: float
+    descricao: str
+
+
+class ContaBancaria:
+    def __init__(self, cliente: Cliente, tipo: TipoConta = "corrente", taxa_juros_anual: float = 0.06):
+        self.id: str = str(uuid.uuid4())
+        self.cliente: Cliente = cliente
+        self.tipo: TipoConta = tipo
+        self.saldo: float = 0.0
+        self.transacoes: List[Transacao] = []
+        self.taxa_juros_anual = taxa_juros_anual  # usado em poupança
+        self._ultimo_rendimento: datetime = datetime.utcnow()
+
+    def depositar(self, valor: float, descricao: str = "Depósito") -> None:
+        self._validar_valor(valor)
+        self.saldo += valor
+        self._registrar("deposito", valor, descricao)
+
+    def sacar(self, valor: float, descricao: str = "Saque") -> None:
+        self._validar_valor(valor)
+        if valor > self.saldo:
+            raise ValueError("Saldo insuficiente.")
+        self.saldo -= valor
+        self._registrar("saque", valor, descricao)
+
+    def transferir(self, destino: ContaBancaria, valor: float) -> None:
+        self._validar_valor(valor)
+        if destino.id == self.id:
+            raise ValueError("Transferência para a mesma conta não é permitida.")
+        if valor > self.saldo:
+            raise ValueError("Saldo insuficiente.")
+        self.sacar(valor, descricao=f"Transferência para {destino.id}")
+        destino.depositar(valor, descricao=f"Transferência de {self.id}")
+
+    def aplicar_rendimento_poupanca(self) -> float:
+        """Aplica rendimento proporcional desde o último cálculo (somente para poupança)."""
+        if self.tipo != "poupanca":
+            return 0.0
+        agora = datetime.utcnow()
+        dias = max((agora - self._ultimo_rendimento).days, 0)
+        if dias == 0 or self.saldo <= 0:
+            self._ultimo_rendimento = agora
+            return 0.0
+        # juros simples diários (aprox): taxa_anual / 365
+        taxa_dia = self.taxa_juros_anual / 365.0
+        rendimento = self.saldo * taxa_dia * dias
+        self.saldo += rendimento
+        self._ultimo_rendimento = agora
+        self._registrar("rendimento", rendimento, f"Rendimento de {dias} dia(s)")
+        return rendimento
+
+    def extrato(self) -> List[Transacao]:
+        return list(self.transacoes)
+
+    def _registrar(self, tipo: str, valor: float, descricao: str) -> None:
+        self.transacoes.append(Transacao(
+            id=str(uuid.uuid4()),
+            data=datetime.utcnow(),
+            tipo=tipo,
+            valor=valor,
+            descricao=descricao
+        ))
+
+    @staticmethod
+    def _validar_valor(valor: float) -> None:
+        if valor <= 0:
+            raise ValueError("Valor deve ser positivo.")
+
+
+# =========================
+# Carteira cripto
+# =========================
+class CarteiraCripto:
+    def __init__(self, cliente: Cliente):
+        self.id: str = str(uuid.uuid4())
+        self.cliente: Cliente = cliente
+        self.saldos: Dict[str, float] = {}  # ex.: {"BTC": 0.1, "ETH": 2.0}
+        self.historico: List[Transacao] = []
+
+    def depositar_token(self, token: str, quantidade: float) -> None:
+        self._validar_quantidade(quantidade)
+        self.saldos[token] = self.saldos.get(token, 0.0) + quantidade
+        self._registrar("deposito_token", quantidade, f"Depósito de {token}")
+
+    def retirar_token(self, token: str, quantidade: float) -> None:
+        self._validar_quantidade(quantidade)
+        if self.saldos.get(token, 0.0) < quantidade:
+            raise ValueError("Saldo de token insuficiente.")
+        self.saldos[token] -= quantidade
+        self._registrar("retirada_token", quantidade, f"Retirada de {token}")
+
+    def transferir_token(self, token: str, quantidade: float, destino: CarteiraCripto) -> None:
+        if destino.id == self.id:
+            raise ValueError("Transferência para a mesma carteira não é permitida.")
+        self.retirar_token(token, quantidade)
+        destino.depositar_token(token, quantidade)
+        self._registrar("transferencia_token", quantidade, f"Para {destino.id} ({token})")
+
+    def _registrar(self, tipo: str, valor: float, descricao: str) -> None:
+        self.historico.append(Transacao(
+            id=str(uuid.uuid4()),
+            data=datetime.utcnow(),
+            tipo=tipo,
+            valor=valor,
+            descricao=descricao
+        ))
+
+    @staticmethod
+    def _validar_quantidade(qtd: float) -> None:
+        if qtd <= 0:
+            raise ValueError("Quantidade deve ser positiva.")
+
+
+# =========================
+# Conversão Fiat ↔ Cripto
+# =========================
+class ConversorCambio:
+    def __init__(self, taxas_iniciais: Optional[Dict[str, float]] = None):
+        # taxas em moeda fiat por unidade do token (ex.: "BTC": 25000.0)
+        self.taxas: Dict[str, float] = taxas_iniciais or {"BTC": 25000.0, "ETH": 1500.0, "USDT": 1.0}
+
+    def atualizar_taxa(self, token: str, taxa: float) -> None:
+        if taxa <= 0:
+            raise ValueError("Taxa deve ser positiva.")
+        self.taxas[token] = taxa
+
+    def cotacao(self, token: str) -> float:
+        if token not in self.taxas:
+            raise ValueError("Token sem cotação.")
+        return self.taxas[token]
+
+    def comprar_token(self, conta: ContaBancaria, carteira: CarteiraCripto, token: str, valor_fiat: float) -> float:
+        """Compra token usando saldo fiat da conta (corrente/poupança). Retorna quantidade comprada."""
+        ContaBancaria._validar_valor(valor_fiat)
+        taxa = self.cotacao(token)
+        quantidade = valor_fiat / taxa
+        if conta.saldo < valor_fiat:
+            raise ValueError("Saldo fiat insuficiente para compra.")
+        conta.sacar(valor_fiat, descricao=f"Compra de {token}")
+        carteira.depositar_token(token, quantidade)
+        return quantidade
+
+    def vender_token(self, conta: ContaBancaria, carteira: CarteiraCripto, token: str, quantidade: float) -> float:
+        """Vende token e credita fiat na conta. Retorna valor recebido."""
+        CarteiraCripto._validar_quantidade(quantidade)
+        taxa = self.cotacao(token)
+        valor_fiat = quantidade * taxa
+        carteira.retirar_token(token, quantidade)
+        conta.depositar(valor_fiat, descricao=f"Venda de {token}")
+        return valor_fiat
+
+
+# =========================
+# Orquestração do sistema
+# =========================
+class BancoDigital:
+    def __init__(self):
+        self.auditoria = Auditoria()
+        self.kyc = KYCService()
+        self.clientes: Dict[str, Cliente] = {}
+        self.contas: Dict[str, ContaBancaria] = {}
+        self.carteiras: Dict[str, CarteiraCripto] = {}
+        self.cambio = ConversorCambio()
+
+    # ---- Clientes e KYC ----
+    def criar_cliente(self, nome: str, documento: str) -> Cliente:
+        cliente = Cliente(id=str(uuid.uuid4()), nome=nome, documento=documento)
+        self.clientes[cliente.id] = cliente
+        self.auditoria.registrar("cliente_criado", f"Cliente {cliente.nome} criado", {"cliente_id": cliente.id})
+        return cliente
+
+    def verificar_kyc(self, cliente_id: str) -> bool:
+        cliente = self._obter_cliente(cliente_id)
+        ok = self.kyc.verificar(cliente)
+        self.auditoria.registrar("kyc", f"KYC {'aprovado' if ok else 'reprovado'}", {"cliente_id": cliente.id})
+        return ok
+
+    # ---- Contas ----
+    def abrir_conta(self, cliente_id: str, tipo: TipoConta = "corrente") -> ContaBancaria:
+        cliente = self._obter_cliente(cliente_id)
+        if not cliente.verificado_kyc:
+            raise PermissionError("KYC obrigatório para abrir conta.")
+        conta = ContaBancaria(cliente, tipo=tipo)
+        self.contas[conta.id] = conta
+        self.auditoria.registrar("conta_aberta", f"Conta {tipo} criada", {"conta_id": conta.id, "cliente_id": cliente.id})
+        return conta
+
+    def depositar_conta(self, conta_id: str, valor: float) -> None:
+        conta = self._obter_conta(conta_id)
+        conta.depositar(valor)
+        self.auditoria.registrar("deposito", f"Depósito em conta {conta_id}", {"valor": f"{valor:.2f}"})
+
+    def transferir(self, origem_id: str, destino_id: str, valor: float) -> None:
+        origem = self._obter_conta(origem_id)
+        destino = self._obter_conta(destino_id)
+        origem.transferir(destino, valor)
+        self.auditoria.registrar("transferencia", f"{origem_id} -> {destino_id}", {"valor": f"{valor:.2f}"})
+
+    def aplicar_rendimento(self, conta_id: str) -> float:
+        conta = self._obter_conta(conta_id)
+        rendimento = conta.aplicar_rendimento_poupanca()
+        if rendimento > 0:
+            self.auditoria.registrar("rendimento", f"Poupança {conta_id} rendimento", {"valor": f"{rendimento:.6f}"})
+        return rendimento
+
+    # ---- Cripto ----
+    def criar_carteira(self, cliente_id: str) -> CarteiraCripto:
+        cliente = self._obter_cliente(cliente_id)
+        if not cliente.verificado_kyc:
+            raise PermissionError("KYC obrigatório para criar carteira cripto.")
+        wallet = CarteiraCripto(cliente)
+        self.carteiras[wallet.id] = wallet
+        self.auditoria.registrar("wallet_criada", "Carteira cripto criada", {"carteira_id": wallet.id, "cliente_id": cliente.id})
+        return wallet
+
+    def comprar_token(self, conta_id: str, carteira_id: str, token: str, valor_fiat: float) -> float:
+        conta = self._obter_conta(conta_id)
+        wallet = self._obter_carteira(carteira_id)
+        qtd = self.cambio.comprar_token(conta, wallet, token, valor_fiat)
+        self.auditoria.registrar("compra_token", f"Compra {token}", {"quantidade": f"{qtd:.8f}"})
+        return qtd
+
+    def vender_token(self, conta_id: str, carteira_id: str, token: str, quantidade: float) -> float:
+        conta = self._obter_conta(conta_id)
+        wallet = self._obter_carteira(carteira_id)
+        valor = self.cambio.vender_token(conta, wallet, token, quantidade)
+        self.auditoria.registrar("venda_token", f"Venda {token}", {"valor": f"{valor:.2f}"})
+        return valor
+
+    # ---- Helpers ----
+    def _obter_cliente(self, cliente_id: str) -> Cliente:
+        if cliente_id not in self.clientes:
+            raise KeyError("Cliente não encontrado.")
+        return self.clientes[cliente_id]
+
+    def _obter_conta(self, conta_id: str) -> ContaBancaria:
+        if conta_id not in self.contas:
+            raise KeyError("Conta não encontrada.")
+        return self.contas[conta_id]
+
+    def _obter_carteira(self, carteira_id: str) -> CarteiraCripto:
+        if carteira_id not in self.carteiras:
+            raise KeyError("Carteira não encontrada.")
+        return self.carteiras[carteira_id]
+
+
+# =========================
+# Exemplo de uso
+# =========================
+if __name__ == "__main__":
+    banco = BancoDigital()
+
+    # 1) Cliente e KYC
+    cliente = banco.criar_cliente(nome="Luan", documento="12345678901")
+    banco.verificar_kyc(cliente.id)
+
+    # 2) Conta corrente e poupança
+    conta_corrente = banco.abrir_conta(cliente.id, tipo="corrente")
+    conta_poupanca = banco.abrir_conta(cliente.id, tipo="poupanca")
+
+    banco.depositar_conta(conta_corrente.id, 2000.00)
+    banco.depositar_conta(conta_poupanca.id, 5000.00)
+
+    # Aplicar rendimento de poupança (simulação após alguns dias)
+    conta_poupanca._ultimo_rendimento -= timedelta(days=10)
+    rendimento = banco.aplicar_rendimento(conta_poupanca.id)
+    print(f"Rendimento aplicado: R$ {rendimento:.2f}")
+
+    # 3) Transferência entre contas
+    banco.transferir(conta_corrente.id, conta_poupanca.id, 300.00)
+
+    # 4) Carteira cripto e conversões
+    carteira = banco.criar_carteira(cliente.id)
+    qtd_eth = banco.comprar_token(conta_corrente.id, carteira.id, token="ETH", valor_fiat=600.00)
+    print(f"Comprado ETH: {qtd_eth:.6f}")
+
+    valor_btc = banco.vender_token(conta_corrente.id, carteira.id, token="BTC", quantidade=0.01)  # se houver saldo
+    print(f"Recebido em fiat (BTC): R$ {valor_btc:.2f}")
+
+    # 5) Auditoria
+    print(f"Eventos de auditoria: {len(banco.auditoria.eventos)}")
+    for ev in banco.auditoria.consultar()[:5]:
+        print(f"[{ev.tipo}] {ev.mensagem} @ {ev.timestamp.isoformat()}")
