@@ -1,0 +1,10 @@
+@router.get("/extrato")
+def extrato(conta_numero: str, tipo: str = None, inicio: str = None, fim: str = None, db: Session = Depends(get_db)):
+    query = db.query(Transacao).filter(Transacao.conta_numero == conta_numero)
+    if tipo:
+        query = query.filter(Transacao.tipo == tipo)
+    if inicio:
+        query = query.filter(Transacao.data >= inicio)
+    if fim:
+        query = query.filter(Transacao.data <= fim)
+    return query.all()
