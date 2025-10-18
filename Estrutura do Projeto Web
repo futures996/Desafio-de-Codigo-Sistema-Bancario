@@ -1,0 +1,16 @@
+sistema_bancario_web/
+├── backend/ (FastAPI)
+│   ├── main.py
+│   ├── models/
+│   ├── routes/
+│   ├── services/
+│   ├── database.py
+│   └── requirements.txt
+├── frontend/ (React)
+│   ├── public/
+│   ├── src/
+│   │   ├── components/
+│   │   ├── pages/
+│   │   ├── App.jsx
+│   │   └── index.js
+│   └── package.json
