@@ -1,0 +1,6 @@
+# 1) Inicie
+python main.py
+
+# 2) Cadastre um cliente
+# 3) Uma conta corrente é criada automaticamente
+# 4) Faça depósito, saque, transferência e veja extrato
