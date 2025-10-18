@@ -94,6 +94,9 @@ Desenvolver uma plataforma bancária digital que ofereça serviços financeiros 
 
 ## 🧠 DIFERENCIAIS ESTRATÉGICOS
 
+Licença
+Este projeto é fornecido como exemplo educacional e pode ser adaptado livremente para fins de estudo ou prototipagem.
+
 - Interface única para fiat e cripto  
 - Suporte a múltiplas redes blockchain  
 - IA para personalização, prevenção de fraudes e análise de comportamento  
