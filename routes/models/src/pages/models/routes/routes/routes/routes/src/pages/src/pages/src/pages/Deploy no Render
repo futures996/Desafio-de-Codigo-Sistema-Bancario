@@ -1,0 +1,9 @@
+Crie um novo serviço web no Render
+
+Conecte seu repositório GitHub
+
+Configure:
+
+Build command: pip install -r requirements.txt
+
+Start command: uvicorn main:app --host 0.0.0.0 --port 8000
