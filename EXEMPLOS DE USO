@@ -1,0 +1,17 @@
+banco = BancoDigital()
+
+# Criar cliente e verificar KYC
+cliente = banco.criar_cliente("Luan", "12345678901")
+banco.verificar_kyc(cliente.id)
+
+# Abrir contas
+conta_corrente = banco.abrir_conta(cliente.id, tipo="corrente")
+conta_poupanca = banco.abrir_conta(cliente.id, tipo="poupanca")
+
+# Operações
+banco.depositar_conta(conta_corrente.id, 2000)
+banco.transferir(conta_corrente.id, conta_poupanca.id, 300)
+
+# Carteira cripto
+wallet = banco.criar_carteira(cliente.id)
+banco.comprar_token(conta_corrente.id, wallet.id, "ETH", 600)
