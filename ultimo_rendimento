@@ -1,0 +1,9 @@
+from datetime import datetime
+
+class Conta:
+    def __init__(self, numero, tipo, saldo=0.0):
+        self.numero = numero
+        self.tipo = tipo
+        self.saldo = saldo
+        self.transacoes = []
+        self.ultimo_rendimento = datetime.now()
