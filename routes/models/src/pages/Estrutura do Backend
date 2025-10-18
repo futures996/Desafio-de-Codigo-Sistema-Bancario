@@ -1,0 +1,13 @@
+backend/
+├── main.py
+├── models/
+│   ├── cliente.py
+│   ├── conta.py
+│   └── transacao.py
+├── routes/
+│   ├── clientes.py
+│   ├── contas.py
+│   └── transacoes.py
+├── database.py
+├── schemas.py
+├── requirements.txt
