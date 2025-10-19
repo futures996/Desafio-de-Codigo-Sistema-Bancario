@@ -1,6 +1,8 @@
-class Cliente:
-    def __init__(self, nome, cpf, senha_hash):
-        self.nome = nome
-        self.cpf = cpf
-        self.senha_hash = senha_hash
-        self.contas = []
+from sqlalchemy import Column, String
+from database import Base
+
+class Cliente(Base):
+    __tablename__ = "clientes"
+    cpf = Column(String, primary_key=True, index=True)
+    nome = Column(String)
+    senha_hash = Column(String)
