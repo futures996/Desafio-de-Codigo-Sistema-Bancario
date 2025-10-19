@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 
-class ClienteCreate(BaseModel):
-    cpf: str
-    nome: str
-    senha: str
+class ContaCreate(BaseModel):
+    numero: str
+    tipo: str
+    cliente_cpf: str
